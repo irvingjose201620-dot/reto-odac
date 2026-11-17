@@ -52,7 +52,10 @@
   .row .btn{flex:1 1 180px}
   .hidden{display:none !important}
 
-  .topbar{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:.92rem; color:var(--muted); margin-bottom:8px}
+  .topbar{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:2px 12px; font-size:.92rem; color:var(--muted); margin-bottom:8px}
+  .rules{background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin:0 0 16px; font-size:.93rem}
+  .rules b{color:var(--ink)}
+  .pts{display:block; margin-top:4px; font-weight:700}
   .topbar b{color:var(--ink)}
   .bar{height:8px; background:var(--line); border-radius:99px; overflow:hidden; margin-bottom:16px}
   .bar>i{display:block; height:100%; width:0; background:var(--brand); transition:width .25s}
@@ -104,6 +107,7 @@
     <span class="badge">DIPLOMADO SIDOCAL · MÓDULO 7</span>
     <h1 id="t-start" tabindex="-1">Reto ODAC</h1>
     <p class="sub">Pon a prueba lo que sabes sobre el Organismo Dominicano de Acreditación. Son 10 preguntas de selección múltiple, con explicación después de cada respuesta.</p>
+    <p class="rules"><b>Cómo se puntúa:</b> cada acierto vale 100 puntos, más hasta 50 puntos de bono por rapidez (el bono baja a cero a los 30 segundos de cada pregunta). Gana quien acumule más puntos: más aciertos y más rápido.</p>
     <form id="f-name" autocomplete="off" novalidate>
       <label for="in-name">Tu nombre</label>
       <input id="in-name" type="text" maxlength="30" placeholder="Nombre y apellido" enterkeyhint="go" autocomplete="name" required>
@@ -120,6 +124,7 @@
     <div class="topbar">
       <span>Pregunta <b id="q-n">1</b> de <b id="q-total">10</b></span>
       <span>Aciertos: <b id="q-score">0</b></span>
+      <span>Puntos: <b id="q-points">0</b></span>
       <span>Tiempo: <b id="q-time">0:00</b></span>
     </div>
     <div class="bar" aria-hidden="true"><i id="q-bar"></i></div>
@@ -135,8 +140,8 @@
   <section id="s-result" class="card hidden" aria-labelledby="t-result">
     <span class="badge">RESULTADO</span>
     <h2 id="t-result" tabindex="-1"></h2>
-    <div class="score"><span id="r-score">0</span><small> / 10</small></div>
-    <div class="stats"><span>Tiempo: <b id="r-time"></b></span><span>Posición: <b id="r-pos"></b></span></div>
+    <div class="score"><span id="r-points">0</span><small> puntos</small></div>
+    <div class="stats"><span>Aciertos: <b id="r-score">0</b> / 10</span><span>Tiempo: <b id="r-time"></b></span><span>Posición: <b id="r-pos"></b></span></div>
     <p id="r-msg" class="sub"></p>
     <div class="row">
       <a class="btn" id="b-wa" target="_blank" rel="noopener" style="text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center">Compartir por WhatsApp</a>
@@ -179,6 +184,9 @@
   var ONLINE_URL = '';
 
   var TOTAL = 10;
+  var BASE_PTS = 100;      // puntos por cada acierto
+  var BONUS_MAX = 50;      // bono máximo por rapidez en cada pregunta
+  var BONUS_SECS = 30;     // a los 30 s el bono llega a cero
   var KEY = 'reto-odac:puntuaciones:v1';
   var memoryScores = [];
 
@@ -270,6 +278,7 @@
   function cleanName(s){ return String(s||'').replace(/\s+/g,' ').trim().slice(0,30); }
   function sortScores(list){
     return list.slice().sort(function(a,b){
+      if (b.points !== a.points) return b.points - a.points;
       if (b.score !== a.score) return b.score - a.score;
       if (a.secs !== b.secs) return a.secs - b.secs;
       return String(a.date).localeCompare(String(b.date));
@@ -297,7 +306,12 @@
     if (!e) return null;
     var score = Number(e.score), secs = Number(e.secs);
     if (!isFinite(score) || !isFinite(secs)) return null;
-    return { id:String(e.id||''), name:cleanName(e.name)||'Sin nombre', score:Math.max(0,Math.min(TOTAL,Math.round(score))), secs:Math.max(0,Math.round(secs)), date:String(e.date||'') };
+    var sc = Math.max(0,Math.min(TOTAL,Math.round(score)));
+    var pts = Number(e.points);
+    // Puntuaciones anteriores a la regla de rapidez: solo valen 100 por acierto.
+    if (!isFinite(pts)) pts = sc * BASE_PTS;
+    pts = Math.max(0, Math.min(TOTAL*(BASE_PTS+BONUS_MAX), Math.round(pts)));
+    return { id:String(e.id||''), name:cleanName(e.name)||'Sin nombre', points:pts, score:sc, secs:Math.max(0,Math.round(secs)), date:String(e.date||'') };
   }
   function submitOnline(entry){
     if (!ONLINE_URL) return Promise.resolve();
@@ -327,7 +341,7 @@
     var wrap = document.createElement('div'); wrap.className='tablewrap';
     var t = document.createElement('table');
     var thead = document.createElement('thead'); var hr = document.createElement('tr');
-    [['#','num'],['Nombre',''],['Aciertos','num'],['Tiempo','num'],['Fecha','']].forEach(function(h){
+    [['#','num'],['Nombre',''],['Puntos','num'],['Aciertos','num'],['Tiempo','num'],['Fecha','']].forEach(function(h){
       var th = document.createElement('th'); th.textContent = h[0]; if (h[1]) th.className = h[1]; th.scope='col'; hr.appendChild(th);
     });
     thead.appendChild(hr); t.appendChild(thead);
@@ -335,7 +349,7 @@
     sorted.forEach(function(e,i){
       var tr = document.createElement('tr');
       if (highlightId && e.id === highlightId) tr.className = 'me';
-      var cells = [[String(i+1),'num'],[e.name,'name'],[e.score+' / '+TOTAL,'num'],[fmt(e.secs),'num'],[fmtDate(e.date),'']];
+      var cells = [[String(i+1),'num'],[e.name,'name'],[String(e.points),'num'],[e.score+' / '+TOTAL,'num'],[fmt(e.secs),'num'],[fmtDate(e.date),'']];
       cells.forEach(function(c){ var td=document.createElement('td'); td.textContent=c[0]; if(c[1]) td.className=c[1]; tr.appendChild(td); });
       tb.appendChild(tr);
     });
@@ -364,7 +378,7 @@
             var idx = shuffle(q.o.map(function(_,i){return i;}));
             return { q:q.q, o:idx.map(function(i){return q.o[i];}), a:idx.indexOf(q.a), why:q.why };
           }),
-          i:0, ok:0, answered:false, t0:Date.now() };
+          i:0, ok:0, pts:0, answered:false, t0:Date.now(), tq:Date.now() };
     $('q-total').textContent = TOTAL;
     show('s-quiz');
     clearInterval(tick);
@@ -376,7 +390,9 @@
     var q = G.qs[G.i]; G.answered = false;
     $('q-n').textContent = G.i+1;
     $('q-score').textContent = G.ok;
+    $('q-points').textContent = G.pts;
     $('q-bar').style.width = (G.i/TOTAL*100)+'%';
+    G.tq = Date.now(); // el reloj de rapidez empieza al mostrar la pregunta
     var h = $('q-text'); h.textContent = q.q;
     var ul = $('q-opts'); ul.textContent = '';
     q.o.forEach(function(txt,i){
@@ -403,14 +419,24 @@
       else if (k === i) b.classList.add('bad');
     });
     var good = (i === q.a);
-    if (good) G.ok++;
+    var elapsed = (Date.now() - G.tq) / 1000;
+    var gained = 0, bonus = 0;
+    if (good){
+      G.ok++;
+      bonus = Math.round(BONUS_MAX * Math.max(0, 1 - elapsed / BONUS_SECS));
+      gained = BASE_PTS + bonus;
+      G.pts += gained;
+    }
     $('q-score').textContent = G.ok;
+    $('q-points').textContent = G.pts;
     var fb = $('q-fb'); fb.textContent = '';
     fb.className = 'fb ' + (good ? 'ok' : 'bad');
     var s = document.createElement('strong');
     s.textContent = good ? 'Correcto' : 'Incorrecto. La respuesta correcta es la ' + (q.a+1) + '.';
     var p = document.createElement('span'); p.textContent = q.why;
-    fb.appendChild(s); fb.appendChild(p);
+    var pt = document.createElement('span'); pt.className = 'pts';
+    pt.textContent = good ? '+' + gained + ' puntos (' + BASE_PTS + ' por acierto + ' + bonus + ' por rapidez)' : '+0 puntos';
+    fb.appendChild(s); fb.appendChild(p); fb.appendChild(pt);
     $('q-bar').style.width = ((G.i+1)/TOTAL*100)+'%';
     var nb = $('b-next'); nb.classList.remove('hidden'); nb.focus({preventScroll:false});
   }
@@ -423,12 +449,13 @@
   function finish(){
     clearInterval(tick);
     var secs = Math.round((Date.now()-G.t0)/1000);
-    var entry = { id: Date.now().toString(36) + rnd(1e6).toString(36), name:G.name, score:G.ok, secs:secs, date:new Date().toISOString() };
+    var entry = { id: Date.now().toString(36) + rnd(1e6).toString(36), name:G.name, points:G.pts, score:G.ok, secs:secs, date:new Date().toISOString() };
     var list = loadLocal(); list.push(entry); saveLocal(list);
     submitOnline(entry);
     G.entry = entry;
 
     $('t-result').textContent = G.name;
+    $('r-points').textContent = G.pts;
     $('r-score').textContent = G.ok;
     $('r-time').textContent = fmt(secs);
     var msg = G.ok >= 9 ? 'Excelente: dominas el tema del ODAC.'
@@ -440,7 +467,7 @@
     $('r-board').textContent = 'Cargando…';
     show('s-result');
 
-    var text = 'Soy ' + G.name + ' y saqué ' + G.ok + '/' + TOTAL + ' en el Reto ODAC (' + fmt(secs) + '). ¿Puedes superarme?';
+    var text = 'Soy ' + G.name + ' y hice ' + G.pts + ' puntos en el Reto ODAC (' + G.ok + '/' + TOTAL + ' aciertos en ' + fmt(secs) + '). ¿Puedes superarme?';
     if (/^https?:/.test(location.protocol)) text += ' ' + location.href.split('#')[0];
     G.shareText = text;
     $('b-wa').href = 'https://wa.me/?text=' + encodeURIComponent(text);
@@ -491,8 +518,8 @@
       v = String(v); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;
       return '"' + v.replace(/"/g,'""') + '"';
     };
-    var rows = [['Posicion','Nombre','Aciertos','Segundos','Fecha']];
-    sortScores(list).forEach(function(e,i){ rows.push([i+1,e.name,e.score,e.secs,e.date]); });
+    var rows = [['Posicion','Nombre','Puntos','Aciertos','Segundos','Fecha']];
+    sortScores(list.map(sanitizeEntry).filter(Boolean)).forEach(function(e,i){ rows.push([i+1,e.name,e.points,e.score,e.secs,e.date]); });
     var csv = '﻿' + rows.map(function(r){ return r.map(esc).join(','); }).join('\r\n');
     var url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
     var a = document.createElement('a'); a.href = url; a.download = 'puntuaciones-reto-odac.csv';
