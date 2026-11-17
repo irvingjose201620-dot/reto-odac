@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Reto ODAC · 10 preguntas</title>
+<style>
+  :root{
+    --bg:#eef3f8; --card:#ffffff; --ink:#14233a; --muted:#5b6b82; --line:#d8e1ec;
+    --brand:#0b5cab; --brand-ink:#ffffff; --ok:#17794f; --ok-bg:#e3f5ec;
+    --bad:#b3261e; --bad-bg:#fbe9e7; --gold:#f2b01e; --me:#fff6d6;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e1726; --card:#16233a; --ink:#eaf1fb; --muted:#9db0c9; --line:#2a3b58;
+      --brand:#5aa2f0; --brand-ink:#0a1424; --ok:#5fd09b; --ok-bg:#143a2b;
+      --bad:#ff8a80; --bad-bg:#44201d; --gold:#f2b01e; --me:#3a3213;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; min-height:100vh; min-height:100dvh; background:var(--bg); color:var(--ink);
+    font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    padding:max(16px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+  }
+  main{max-width:720px; margin:0 auto}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow:0 1px 2px rgba(10,30,60,.06)}
+  h1{font-size:1.65rem; line-height:1.2; margin:0 0 6px}
+  h2{font-size:1.2rem; line-height:1.3; margin:0 0 12px}
+  h1:focus,h2:focus{outline:none}
+  .sub{color:var(--muted); margin:0 0 18px}
+  .badge{display:inline-block; background:var(--brand); color:var(--brand-ink); font-weight:700; font-size:.78rem; letter-spacing:.04em; padding:3px 10px; border-radius:999px; margin-bottom:10px}
+  label{display:block; font-weight:600; margin:0 0 6px}
+  input[type=text]{
+    width:100%; font:inherit; padding:14px 14px; border-radius:10px; border:2px solid var(--line);
+    background:var(--bg); color:var(--ink);
+  }
+  input[type=text]:focus{outline:3px solid color-mix(in srgb,var(--brand) 40%,transparent); border-color:var(--brand)}
+  .err{color:var(--bad); min-height:1.4em; margin:6px 0 0; font-size:.92rem}
+  .btn{
+    appearance:none; border:0; cursor:pointer; font:inherit; font-weight:700; min-height:48px;
+    padding:12px 20px; border-radius:12px; background:var(--brand); color:var(--brand-ink);
+  }
+  .btn:focus-visible,.opt:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+  .btn.alt{background:transparent; color:var(--brand); border:2px solid var(--brand)}
+  .btn.warn{background:transparent; color:var(--bad); border:2px solid var(--bad)}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .row{display:flex; flex-wrap:wrap; gap:10px; margin-top:16px}
+  .row .btn{flex:1 1 180px}
+  .hidden{display:none !important}
+
+  .topbar{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:.92rem; color:var(--muted); margin-bottom:8px}
+  .topbar b{color:var(--ink)}
+  .bar{height:8px; background:var(--line); border-radius:99px; overflow:hidden; margin-bottom:16px}
+  .bar>i{display:block; height:100%; width:0; background:var(--brand); transition:width .25s}
+  .q{font-size:1.18rem; font-weight:700; line-height:1.4; margin:0 0 14px}
+  .opts{display:grid; gap:10px; margin:0; padding:0; list-style:none}
+  .opt{
+    width:100%; text-align:left; font:inherit; color:var(--ink); background:var(--bg);
+    border:2px solid var(--line); border-radius:12px; padding:14px 14px 14px 52px; min-height:56px; cursor:pointer; position:relative;
+  }
+  .opt::before{
+    content:attr(data-k); position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    width:28px; height:28px; border-radius:50%; background:var(--card); border:2px solid var(--line);
+    display:grid; place-items:center; font-weight:700; font-size:.85rem; color:var(--muted);
+  }
+  .opt:hover:not(:disabled){border-color:var(--brand)}
+  .opt:disabled{cursor:default}
+  .opt.ok{background:var(--ok-bg); border-color:var(--ok)}
+  .opt.ok::before{background:var(--ok); border-color:var(--ok); color:#fff; content:"\2713"}
+  .opt.bad{background:var(--bad-bg); border-color:var(--bad)}
+  .opt.bad::before{background:var(--bad); border-color:var(--bad); color:#fff; content:"\2715"}
+  .fb{margin-top:14px; padding:12px 14px; border-radius:12px; border-left:6px solid var(--line); background:var(--bg)}
+  .fb.ok{border-left-color:var(--ok); background:var(--ok-bg)}
+  .fb.bad{border-left-color:var(--bad); background:var(--bad-bg)}
+  .fb strong{display:block; margin-bottom:2px}
+
+  .score{font-size:3.2rem; font-weight:800; line-height:1; margin:6px 0}
+  .score small{font-size:1.3rem; color:var(--muted); font-weight:600}
+  .stats{display:flex; gap:18px; flex-wrap:wrap; color:var(--muted); margin:6px 0 4px}
+  .tablewrap{overflow-x:auto; margin-top:12px; border:1px solid var(--line); border-radius:12px}
+  table{border-collapse:collapse; width:100%; min-width:420px; font-size:.95rem}
+  th,td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap}
+  td.name{white-space:normal; word-break:break-word; min-width:120px}
+  th{background:var(--bg); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted)}
+  tr:last-child td{border-bottom:0}
+  tr.me td{background:var(--me); font-weight:700}
+  td.num,th.num{text-align:center}
+  .empty{padding:18px; text-align:center; color:var(--muted)}
+  .note{font-size:.85rem; color:var(--muted); margin:16px 2px 0; text-align:center}
+  .src{font-size:.85rem; color:var(--muted); margin:10px 0 0}
+  @media (prefers-reduced-motion: reduce){ .bar>i{transition:none} }
+  @media (max-width:420px){ .card{padding:16px} .score{font-size:2.8rem} }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- INICIO -->
+  <section id="s-start" class="card" aria-labelledby="t-start">
+    <span class="badge">DIPLOMADO SIDOCAL · MÓDULO 7</span>
+    <h1 id="t-start" tabindex="-1">Reto ODAC</h1>
+    <p class="sub">Pon a prueba lo que sabes sobre el Organismo Dominicano de Acreditación. Son 10 preguntas de selección múltiple, con explicación después de cada respuesta.</p>
+    <form id="f-name" autocomplete="off" novalidate>
+      <label for="in-name">Tu nombre</label>
+      <input id="in-name" type="text" maxlength="30" placeholder="Nombre y apellido" enterkeyhint="go" autocomplete="name" required>
+      <p class="err" id="err-name" role="alert"></p>
+      <div class="row">
+        <button class="btn" type="submit">Comenzar</button>
+        <button class="btn alt" type="button" id="b-board-start">Ver puntuaciones</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- PREGUNTAS -->
+  <section id="s-quiz" class="card hidden" aria-labelledby="q-text">
+    <div class="topbar">
+      <span>Pregunta <b id="q-n">1</b> de <b id="q-total">10</b></span>
+      <span>Aciertos: <b id="q-score">0</b></span>
+      <span>Tiempo: <b id="q-time">0:00</b></span>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="q-bar"></i></div>
+    <h2 class="q" id="q-text" tabindex="-1"></h2>
+    <ul class="opts" id="q-opts"></ul>
+    <div id="q-fb" class="fb hidden" role="status" aria-live="polite"></div>
+    <div class="row">
+      <button class="btn hidden" id="b-next" type="button">Siguiente</button>
+    </div>
+  </section>
+
+  <!-- RESULTADO -->
+  <section id="s-result" class="card hidden" aria-labelledby="t-result">
+    <span class="badge">RESULTADO</span>
+    <h2 id="t-result" tabindex="-1"></h2>
+    <div class="score"><span id="r-score">0</span><small> / 10</small></div>
+    <div class="stats"><span>Tiempo: <b id="r-time"></b></span><span>Posición: <b id="r-pos"></b></span></div>
+    <p id="r-msg" class="sub"></p>
+    <div class="row">
+      <a class="btn" id="b-wa" target="_blank" rel="noopener" style="text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center">Compartir por WhatsApp</a>
+      <button class="btn alt" id="b-copy" type="button">Copiar resultado</button>
+    </div>
+    <h2 style="margin-top:22px">Puntuaciones</h2>
+    <div id="r-board"></div>
+    <div class="row">
+      <button class="btn" id="b-again" type="button">Jugar de nuevo</button>
+    </div>
+  </section>
+
+  <!-- PUNTUACIONES -->
+  <section id="s-board" class="card hidden" aria-labelledby="t-board">
+    <h2 id="t-board" tabindex="-1">Puntuaciones</h2>
+    <p class="src" id="board-src"></p>
+    <div id="board"></div>
+    <div class="row">
+      <button class="btn" id="b-back" type="button">Volver</button>
+      <button class="btn alt" id="b-csv" type="button">Descargar CSV</button>
+      <button class="btn warn" id="b-clear" type="button">Borrar (este dispositivo)</button>
+    </div>
+  </section>
+
+  <noscript><div class="card">Este juego necesita JavaScript activado en el navegador.</div></noscript>
+
+  <p class="note">Juego educativo basado en el Módulo 7 del Diplomado SIDOCAL y en la Ley 166-12. No es un sitio oficial del ODAC.</p>
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ------------------------------------------------------------------
+     CONFIGURACIÓN OPCIONAL: ranking compartido entre todos los jugadores.
+     Pega aquí la URL de tu Google Apps Script (ver archivo
+     ranking-google-sheets.gs.txt). Si queda vacío, el ranking se guarda
+     solo en el navegador de cada dispositivo.
+     ------------------------------------------------------------------ */
+  var ONLINE_URL = '';
+
+  var TOTAL = 10;
+  var KEY = 'reto-odac:puntuaciones:v1';
+  var memoryScores = [];
+
+  /* ------------------------------ PREGUNTAS ------------------------------ */
+  var BANK = [
+    { q:'¿Qué ley crea el Organismo Dominicano de Acreditación (ODAC)?',
+      o:['Ley 358-05, de Protección al Consumidor','Ley 166-12, que crea el SIDOCAL','Ley 42-01, General de Salud','Ley 602 de 1977, sobre Normas y Sistemas de Calidad'], a:1,
+      why:'El ODAC nace en la Ley 166-12, la misma que establece el Sistema Dominicano para la Calidad (SIDOCAL).' },
+    { q:'¿Cuál es la función principal del ODAC?',
+      o:['Elaborar las normas técnicas dominicanas','Reconocer formalmente la competencia técnica de los organismos de evaluación de la conformidad (acreditar)','Inspeccionar comercios y sancionar a los proveedores','Emitir certificados ISO 9001 a las empresas'], a:1,
+      why:'El ODAC acredita a los organismos de evaluación de la conformidad. Las normas las elabora el INDOCAL y la vigilancia en el comercio la hace Pro Consumidor.' },
+    { q:'¿Qué entidad ejerce la máxima representación y coordinación del SIDOCAL?',
+      o:['ODAC','INDOCAL','CODOCA','Pro Consumidor'], a:2,
+      why:'El CODOCA (Consejo Dominicano para la Calidad) formula y coordina las políticas del SIDOCAL.' },
+    { q:'¿Qué dos instituciones cumplen las funciones técnicas del SIDOCAL?',
+      o:['CODOCA y Pro Consumidor','INDOCAL y ODAC','INDOCAL y DIGEMAPS','ODAC y el Ministerio de Industria y Comercio'], a:1,
+      why:'El INDOCAL se encarga de la normalización técnica y la metrología; el ODAC, de la acreditación.' },
+    { q:'Según el Art. 72 de la Ley 166-12, el ODAC es…',
+      o:['el único organismo estatal con competencia legal en acreditación','uno de varios organismos estatales que acreditan','una empresa privada autorizada por el CODOCA','una dirección interna del INDOCAL'], a:0,
+      why:'Es una entidad estatal con autonomía administrativa, técnica, económica, financiera y operativa, y la única con competencia legal para acreditar.' },
+    { q:'¿Cuál es la misión del ODAC según el Art. 73?',
+      o:['Fijar los precios de los servicios de laboratorio','Respaldar la competencia técnica y la credibilidad de las entidades acreditadas para dar confianza al SIDOCAL','Sancionar a los consumidores que incumplen','Producir y distribuir patrones de medida'], a:1,
+      why:'También busca que los servicios de los acreditados mantengan la calidad con la que se les reconoció su competencia.' },
+    { q:'¿Por cuántos años es designado el Director Ejecutivo del ODAC (Art. 76)?',
+      o:['2 años','4 años','6 años','8 años'], a:2,
+      why:'El Director Ejecutivo es la máxima autoridad técnica y administrativa del ODAC y se designa por un período de seis años.' },
+    { q:'¿Qué órgano del ODAC acredita y puede sancionar a los acreditados que incumplen?',
+      o:['La Comisión de Acreditación','Los Comités Técnicos ad hoc','La Comisión Técnica de Expertos','El Auditor Financiero'], a:0,
+      why:'Arts. 77 y 78: la Comisión de Acreditación acredita, instruye las investigaciones y sanciona. Los comités ad hoc solo la asisten en cada caso.' },
+    { q:'¿Cuál afirmación distingue bien acreditación de certificación?',
+      o:['La acreditación evalúa la competencia de un organismo de evaluación; la certificación demuestra que un producto, sistema o persona cumple requisitos','La acreditación se aplica a productos y la certificación a laboratorios','Son sinónimos y las emite el mismo organismo','La certificación la otorga el ODAC y la acreditación el INDOCAL'], a:0,
+      why:'Se acredita a quien evalúa (laboratorio, inspección, certificadora) y se certifica lo evaluado (producto, sistema de gestión, persona).' },
+    { q:'Un laboratorio de ensayos de agua cuya competencia fue reconocida por el ODAC con la norma ISO/IEC 17025 está…',
+      o:['certificado','acreditado','normalizado','homologado'], a:1,
+      why:'La ISO/IEC 17025 se aplica a laboratorios de ensayo y calibración, y los laboratorios se acreditan, no se certifican.' },
+    { q:'¿A quién se aplica la norma ISO/IEC 17011:2017?',
+      o:['A los laboratorios de ensayo','A los organismos de inspección','A los organismos de acreditación, como el ODAC','A las empresas que quieren certificar su ISO 9001'], a:2,
+      why:'Establece los requisitos que debe cumplir un organismo de acreditación para prestar el servicio de acreditación.' },
+    { q:'¿Qué tipo de organismos se acreditan con la norma ISO/IEC 17020?',
+      o:['Laboratorios de calibración','Organismos de inspección','Organismos de certificación de personas','Organismos de acreditación'], a:1,
+      why:'La ISO/IEC 17020 fija los requisitos para los organismos que realizan inspección.' },
+    { q:'Una empresa obtiene la certificación ISO 9001. ¿Qué organismo la certificó, según la norma ISO/IEC 17021-1?',
+      o:['Un laboratorio de ensayo','Un organismo de inspección','Un organismo que audita y certifica sistemas de gestión','El propio ODAC'], a:2,
+      why:'La ISO/IEC 17021-1 rige a los organismos que auditan y certifican sistemas de gestión. El ODAC acredita a esos organismos; no certifica empresas.' },
+    { q:'¿Para qué sirve un Acuerdo de Reconocimiento Mutuo (MLA)?',
+      o:['Para que los organismos de acreditación pares se reconozcan entre sí y se acepten los resultados acreditados entre países','Para fijar aranceles entre países','Para que un país certifique los productos de otro','Para unificar las leyes de calidad de la región'], a:0,
+      why:'Reduce repeticiones de ensayos y barreras técnicas al comercio. El Art. 83 manda al ODAC integrarse a los organismos regionales y mundiales para alcanzar su reconocimiento internacional y entrar a los MLA.' },
+    { q:'¿Qué organización agrupa a los organismos de acreditación de las Américas?',
+      o:['IAAC','ILAC','IAF','OMC'], a:0,
+      why:'IAAC es la cooperación interamericana de acreditación. ILAC (laboratorios e inspección) e IAF (certificación) son organizaciones mundiales.' },
+    { q:'Si una entidad acreditada incumple sus deberes, ¿qué debe hacer la Comisión de Acreditación (Art. 86)?',
+      o:['Dejarla pasar si es la primera vez','Instruir el procedimiento sancionatorio y, si se comprueba el incumplimiento, retirarle la acreditación','Pedirle al INDOCAL que la certifique de nuevo','Trasladar su caso a Pro Consumidor para que la multe'], a:1,
+      why:'El procedimiento puede iniciarse de oficio o por denuncia. Entre los deberes (Art. 85) está facilitar las evaluaciones de seguimiento, anunciadas y no anunciadas.' },
+    { q:'Según el Art. 90, quien emite certificados o marcas de conformidad debe…',
+      o:['estar acreditado por un organismo de acreditación reconocido','ser una empresa del Estado','tener al menos 10 años de operación','pertenecer al CODOCA'], a:0,
+      why:'Un certificado no vale por el sello, sino porque un tercero independiente comprobó que quien lo emite es competente.' },
+    { q:'¿Qué debe conformar el ODAC según el Art. 91 para dar confiabilidad al sector privado y a los reguladores?',
+      o:['Un registro de consumidores','Una Red de Organismos de Evaluación de la Conformidad Acreditados','Un fondo de sanciones','Una bolsa de inspectores del Estado'], a:1,
+      why:'Es la lista a la que se puede acudir con confianza y que facilita el comercio interno y externo.' },
+    { q:'¿Cuál NO es un principio rector del ODAC (Art. 84)?',
+      o:['Imparcialidad','Confidencialidad','Transparencia','Exclusividad comercial'], a:3,
+      why:'Los principios son integridad, coherencia, transparencia, confidencialidad, participación, confiabilidad, confianza, imparcialidad, autonomía y objetividad.' }
+  ];
+
+  /* ------------------------------ UTILIDADES ------------------------------ */
+  function $(id){ return document.getElementById(id); }
+  function rnd(n){
+    if (window.crypto && crypto.getRandomValues){
+      var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n;
+    }
+    return Math.floor(Math.random()*n);
+  }
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i=a.length-1;i>0;i--){ var j=rnd(i+1); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+  function fmt(secs){
+    secs = Math.max(0, Math.round(secs));
+    var m = Math.floor(secs/60), s = secs%60;
+    return m + ':' + (s<10?'0':'') + s;
+  }
+  function fmtDate(iso){
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    var p = function(n){ return n<10?'0'+n:''+n; };
+    return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());
+  }
+  function cleanName(s){ return String(s||'').replace(/\s+/g,' ').trim().slice(0,30); }
+  function sortScores(list){
+    return list.slice().sort(function(a,b){
+      if (b.score !== a.score) return b.score - a.score;
+      if (a.secs !== b.secs) return a.secs - b.secs;
+      return String(a.date).localeCompare(String(b.date));
+    });
+  }
+  function show(id){
+    ['s-start','s-quiz','s-result','s-board'].forEach(function(s){ $(s).classList.toggle('hidden', s!==id); });
+    var h = $(id).querySelector('h1,h2');
+    if (h) h.focus({preventScroll:true});
+    window.scrollTo(0,0);
+  }
+
+  /* ------------------------------ ALMACENAMIENTO ------------------------------ */
+  function loadLocal(){
+    try{
+      var v = JSON.parse(localStorage.getItem(KEY) || '[]');
+      return Array.isArray(v) ? v : [];
+    }catch(e){ return memoryScores; }
+  }
+  function saveLocal(list){
+    memoryScores = list;
+    try{ localStorage.setItem(KEY, JSON.stringify(list)); }catch(e){}
+  }
+  function sanitizeEntry(e){
+    if (!e) return null;
+    var score = Number(e.score), secs = Number(e.secs);
+    if (!isFinite(score) || !isFinite(secs)) return null;
+    return { id:String(e.id||''), name:cleanName(e.name)||'Sin nombre', score:Math.max(0,Math.min(TOTAL,Math.round(score))), secs:Math.max(0,Math.round(secs)), date:String(e.date||'') };
+  }
+  function submitOnline(entry){
+    if (!ONLINE_URL) return Promise.resolve();
+    return fetch(ONLINE_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(entry) }).catch(function(){});
+  }
+  function loadBoard(){
+    // Devuelve {list, source}
+    var local = loadLocal().map(sanitizeEntry).filter(Boolean);
+    if (!ONLINE_URL) return Promise.resolve({list:local, source:'local'});
+    return fetch(ONLINE_URL + (ONLINE_URL.indexOf('?')>-1?'&':'?') + 'action=list', {cache:'no-store'})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var arr = Array.isArray(d) ? d : (d && d.scores) || [];
+        return { list: arr.map(sanitizeEntry).filter(Boolean), source:'online' };
+      })
+      .catch(function(){ return { list:local, source:'local-fallback' }; });
+  }
+
+  /* ------------------------------ MATRIZ DE PUNTUACIONES ------------------------------ */
+  function renderBoard(container, list, highlightId){
+    container.textContent = '';
+    var sorted = sortScores(list).slice(0, 100);
+    if (!sorted.length){
+      var p = document.createElement('div'); p.className='empty'; p.textContent='Todavía no hay puntuaciones. Sé la primera persona en jugar.';
+      container.appendChild(p); return;
+    }
+    var wrap = document.createElement('div'); wrap.className='tablewrap';
+    var t = document.createElement('table');
+    var thead = document.createElement('thead'); var hr = document.createElement('tr');
+    [['#','num'],['Nombre',''],['Aciertos','num'],['Tiempo','num'],['Fecha','']].forEach(function(h){
+      var th = document.createElement('th'); th.textContent = h[0]; if (h[1]) th.className = h[1]; th.scope='col'; hr.appendChild(th);
+    });
+    thead.appendChild(hr); t.appendChild(thead);
+    var tb = document.createElement('tbody');
+    sorted.forEach(function(e,i){
+      var tr = document.createElement('tr');
+      if (highlightId && e.id === highlightId) tr.className = 'me';
+      var cells = [[String(i+1),'num'],[e.name,'name'],[e.score+' / '+TOTAL,'num'],[fmt(e.secs),'num'],[fmtDate(e.date),'']];
+      cells.forEach(function(c){ var td=document.createElement('td'); td.textContent=c[0]; if(c[1]) td.className=c[1]; tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb); wrap.appendChild(t); container.appendChild(wrap);
+  }
+  function sourceLabel(src){
+    if (src==='online') return 'Ranking general: incluye a todas las personas que han jugado.';
+    if (src==='local-fallback') return 'No se pudo conectar con el ranking general. Se muestran las puntuaciones de este dispositivo.';
+    return 'Estas puntuaciones se guardan en este dispositivo.';
+  }
+  function openBoard(){
+    $('board').textContent = 'Cargando…';
+    show('s-board');
+    loadBoard().then(function(r){
+      $('board-src').textContent = sourceLabel(r.source);
+      renderBoard($('board'), r.list, null);
+      $('board').dataset.list = JSON.stringify(r.list);
+    });
+  }
+
+  /* ------------------------------ JUEGO ------------------------------ */
+  var G = null, tick = null;
+
+  function start(name){
+    G = { name:name, qs:shuffle(BANK).slice(0,TOTAL).map(function(q){
+            var idx = shuffle(q.o.map(function(_,i){return i;}));
+            return { q:q.q, o:idx.map(function(i){return q.o[i];}), a:idx.indexOf(q.a), why:q.why };
+          }),
+          i:0, ok:0, answered:false, t0:Date.now() };
+    $('q-total').textContent = TOTAL;
+    show('s-quiz');
+    clearInterval(tick);
+    tick = setInterval(function(){ $('q-time').textContent = fmt((Date.now()-G.t0)/1000); }, 500);
+    renderQ();
+  }
+
+  function renderQ(){
+    var q = G.qs[G.i]; G.answered = false;
+    $('q-n').textContent = G.i+1;
+    $('q-score').textContent = G.ok;
+    $('q-bar').style.width = (G.i/TOTAL*100)+'%';
+    var h = $('q-text'); h.textContent = q.q;
+    var ul = $('q-opts'); ul.textContent = '';
+    q.o.forEach(function(txt,i){
+      var li = document.createElement('li');
+      var b = document.createElement('button'); b.type='button'; b.className='opt'; b.setAttribute('data-k', String(i+1)); b.textContent = txt;
+      b.addEventListener('click', function(){ answer(i); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    $('q-fb').className = 'fb hidden'; $('q-fb').textContent = '';
+    $('b-next').classList.add('hidden');
+    $('b-next').textContent = (G.i === TOTAL-1) ? 'Ver resultado' : 'Siguiente';
+    window.scrollTo(0,0);
+    h.focus({preventScroll:true});
+  }
+
+  function answer(i){
+    if (!G || G.answered) return;
+    G.answered = true;
+    var q = G.qs[G.i];
+    var btns = $('q-opts').querySelectorAll('button');
+    btns.forEach(function(b,k){
+      b.disabled = true;
+      if (k === q.a) b.classList.add('ok');
+      else if (k === i) b.classList.add('bad');
+    });
+    var good = (i === q.a);
+    if (good) G.ok++;
+    $('q-score').textContent = G.ok;
+    var fb = $('q-fb'); fb.textContent = '';
+    fb.className = 'fb ' + (good ? 'ok' : 'bad');
+    var s = document.createElement('strong');
+    s.textContent = good ? 'Correcto' : 'Incorrecto. La respuesta correcta es la ' + (q.a+1) + '.';
+    var p = document.createElement('span'); p.textContent = q.why;
+    fb.appendChild(s); fb.appendChild(p);
+    $('q-bar').style.width = ((G.i+1)/TOTAL*100)+'%';
+    var nb = $('b-next'); nb.classList.remove('hidden'); nb.focus({preventScroll:false});
+  }
+
+  function next(){
+    if (!G || !G.answered) return;
+    if (G.i < TOTAL-1){ G.i++; renderQ(); } else finish();
+  }
+
+  function finish(){
+    clearInterval(tick);
+    var secs = Math.round((Date.now()-G.t0)/1000);
+    var entry = { id: Date.now().toString(36) + rnd(1e6).toString(36), name:G.name, score:G.ok, secs:secs, date:new Date().toISOString() };
+    var list = loadLocal(); list.push(entry); saveLocal(list);
+    submitOnline(entry);
+    G.entry = entry;
+
+    $('t-result').textContent = G.name;
+    $('r-score').textContent = G.ok;
+    $('r-time').textContent = fmt(secs);
+    var msg = G.ok >= 9 ? 'Excelente: dominas el tema del ODAC.'
+            : G.ok >= 7 ? 'Muy bien: tienes buena base, repasa los puntos que fallaste.'
+            : G.ok >= 5 ? 'Vas bien, pero conviene repasar el módulo y volver a intentarlo.'
+            : 'Repasa el módulo y vuelve a intentarlo, con la práctica sube rápido.';
+    $('r-msg').textContent = msg;
+    $('r-pos').textContent = '…';
+    $('r-board').textContent = 'Cargando…';
+    show('s-result');
+
+    var text = 'Soy ' + G.name + ' y saqué ' + G.ok + '/' + TOTAL + ' en el Reto ODAC (' + fmt(secs) + '). ¿Puedes superarme?';
+    if (/^https?:/.test(location.protocol)) text += ' ' + location.href.split('#')[0];
+    G.shareText = text;
+    $('b-wa').href = 'https://wa.me/?text=' + encodeURIComponent(text);
+
+    loadBoard().then(function(r){
+      // Si el ranking en línea aún no incluye esta partida, se agrega para mostrarla ya.
+      if (!r.list.some(function(e){ return e.id === entry.id; })) r.list.push(entry);
+      var sorted = sortScores(r.list);
+      var pos = 0;
+      for (var k=0;k<sorted.length;k++){ if (sorted[k].id === entry.id){ pos = k+1; break; } }
+      $('r-pos').textContent = pos + ' de ' + sorted.length;
+      renderBoard($('r-board'), r.list, entry.id);
+    });
+  }
+
+  /* ------------------------------ EVENTOS ------------------------------ */
+  $('f-name').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var n = cleanName($('in-name').value);
+    if (n.length < 2){ $('err-name').textContent = 'Escribe tu nombre (mínimo 2 letras).'; $('in-name').focus(); return; }
+    $('err-name').textContent = '';
+    start(n);
+  });
+  $('in-name').addEventListener('input', function(){ $('err-name').textContent = ''; });
+  $('b-next').addEventListener('click', next);
+  $('b-board-start').addEventListener('click', openBoard);
+  $('b-back').addEventListener('click', function(){ show('s-start'); });
+  $('b-again').addEventListener('click', function(){ show('s-start'); $('in-name').focus(); });
+
+  $('b-copy').addEventListener('click', function(){
+    var txt = G && G.shareText ? G.shareText : '';
+    var done = function(){ $('b-copy').textContent = 'Copiado'; setTimeout(function(){ $('b-copy').textContent = 'Copiar resultado'; }, 1800); };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, fallback);
+    } else fallback();
+    function fallback(){
+      var ta = document.createElement('textarea'); ta.value = txt; ta.setAttribute('readonly','');
+      ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); done(); }catch(e){}
+      document.body.removeChild(ta);
+    }
+  });
+
+  $('b-csv').addEventListener('click', function(){
+    var list = [];
+    try{ list = JSON.parse($('board').dataset.list || '[]'); }catch(e){}
+    var esc = function(v){
+      v = String(v); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;
+      return '"' + v.replace(/"/g,'""') + '"';
+    };
+    var rows = [['Posicion','Nombre','Aciertos','Segundos','Fecha']];
+    sortScores(list).forEach(function(e,i){ rows.push([i+1,e.name,e.score,e.secs,e.date]); });
+    var csv = '﻿' + rows.map(function(r){ return r.map(esc).join(','); }).join('\r\n');
+    var url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+    var a = document.createElement('a'); a.href = url; a.download = 'puntuaciones-reto-odac.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  });
+
+  $('b-clear').addEventListener('click', function(){
+    if (window.confirm('¿Borrar las puntuaciones guardadas en este dispositivo? No se puede deshacer.')){
+      saveLocal([]); try{ localStorage.removeItem(KEY); }catch(e){}
+      openBoard();
+    }
+  });
+
+  document.addEventListener('keydown', function(ev){
+    if (!G || $('s-quiz').classList.contains('hidden')) return;
+    if (ev.key >= '1' && ev.key <= '4' && !G.answered){
+      var i = Number(ev.key)-1; if (i < G.qs[G.i].o.length) answer(i);
+    } else if (ev.key === 'Enter' && G.answered && document.activeElement !== $('b-next')){
+      next();
+    }
+  });
+})();
+</script>
+</body>
+</html>
